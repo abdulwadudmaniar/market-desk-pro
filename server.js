@@ -17,7 +17,6 @@ if (fs.existsSync(envFile)) {
 }
 
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon', '.txt': 'text/plain' };
-const API = new Set(['auth', 'status', 'connect', 'kite-callback', 'upstox-callback', 'portfolio', 'market', 'history', 'ask', 'resolve', 'angel-callback', 'chart', 'news']);
 
 const SECURITY_HEADERS = JSON.parse(fs.readFileSync(path.join(ROOT, 'vercel.json'), 'utf8')).headers[0].headers;
 
@@ -31,8 +30,7 @@ const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, 'http://local');
     const m = url.pathname.match(/^\/api\/([a-z-]+)\/?$/);
     if (m) {
-      if (!API.has(m[1])) { res.statusCode = 404; return res.end('Not found'); }
-      const mod = await import(pathToFileURL(path.join(ROOT, 'api', m[1] + '.js')).href);
+      const mod = await import(pathToFileURL(path.join(ROOT, 'api', '[route].js')).href);
       return await mod.default(req, res);
     }
     let file = path.normalize(path.join(ROOT, 'public', decodeURIComponent(url.pathname)));

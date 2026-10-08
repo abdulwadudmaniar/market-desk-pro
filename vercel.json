@@ -53,14 +53,8 @@
     }
   ],
   "functions": {
-    "api/news.js": {
+    "api/[route].js": {
       "maxDuration": 30
-    },
-    "api/history.js": {
-      "maxDuration": 30
-    },
-    "api/market.js": {
-      "maxDuration": 20
     }
   }
 }

@@ -171,7 +171,8 @@ The 50-stock breadth list is in `lib/universe.js`.
 ## Project layout
 
 ```
-api/          Server functions (Vercel turns each file into /api/<name>)
+api/          One Vercel function ([route].js) that routes every /api/<name> call
+handlers/     The code for each API route (auth, market, news, brokers, ...)
 lib/          Server helpers: auth, Upstox, Kite, stock universe
 src/          React source for the dashboard
 public/       Built app served to the browser (index.html, app.js, styles, icons, PWA files)
