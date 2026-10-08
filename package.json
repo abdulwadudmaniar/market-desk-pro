@@ -4,14 +4,9 @@
   "private": true,
   "type": "module",
   "description": "Personal Indian-equities dashboard: live market-breadth core, risk analytics, broker connections (Zerodha, Upstox) and Ask Claude.",
-  "engines": { "node": ">=18" },
+  "engines": { "node": "22.x" },
   "scripts": {
     "start": "node server.js",
-    "build:ui": "node build.mjs"
-  },
-  "devDependencies": {
-    "esbuild": "^0.24.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "build:ui": "npm install --no-save esbuild@0.24.2 react@19 react-dom@19 && node build.mjs"
   }
 }
