@@ -3,18 +3,19 @@ import { send } from '../lib/http.js';
 import { requireSession, brokerTokens } from '../lib/auth.js';
 import { kiteHoldings } from '../lib/kite.js';
 import { upstoxHoldings } from '../lib/upstox.js';
+import { angelHoldings } from '../lib/angel.js';
 
 export default async function handler(req, res) {
   if (!requireSession(req, res)) return;
   const t = brokerTokens(req);
   const errors = [];
-  const lists = [];
-  if (t.kite) {
-    try { lists.push(await kiteHoldings(t.kite.t)); } catch (e) { errors.push({ broker: 'Zerodha', error: e.message, expired: e.status === 403 }); }
-  }
-  if (t.upstox) {
-    try { lists.push(await upstoxHoldings(t.upstox.t)); } catch (e) { errors.push({ broker: 'Upstox', error: e.message, expired: e.status === 401 }); }
-  }
+  const jobs = [];
+  if (t.kite) jobs.push(['Zerodha', () => kiteHoldings(t.kite.t), 403]);
+  if (t.upstox) jobs.push(['Upstox', () => upstoxHoldings(t.upstox.t), 401]);
+  if (t.angel) jobs.push(['Angel One', () => angelHoldings(t.angel.t), 401]);
+  const lists = await Promise.all(jobs.map(async ([name, fn, expiredCode]) => {
+    try { return await fn(); } catch (e) { errors.push({ broker: name, error: e.message, expired: e.status === expiredCode || e.status === 401 || e.status === 403 }); return []; }
+  }));
   const merged = {};
   for (const h of lists.flat()) {
     if (!h.symbol || !h.qty) continue;
@@ -25,5 +26,5 @@ export default async function handler(req, res) {
     m.qty = qty;
     m.brokers.push(h.broker);
   }
-  send(res, 200, { holdings: Object.values(merged), errors, connected: { kite: !!t.kite, upstox: !!t.upstox } });
+  send(res, 200, { holdings: Object.values(merged), errors, connected: { kite: !!t.kite, upstox: !!t.upstox, angel: !!t.angel } });
 }

@@ -1,10 +1,11 @@
 // /api/market?extra=SYM1,SYM2 — live quotes for the 50-stock breadth universe, the Nifty 50 and any extra symbols.
-// Uses Upstox first (free market data), then Zerodha (needs the paid Connect plan). Returns source:null if neither works.
+// Order: Upstox (official, real-time) if connected → Yahoo Finance (free, no login) → Zerodha (paid Connect plan).
 import { send, query } from '../lib/http.js';
 import { requireSession, brokerTokens } from '../lib/auth.js';
 import { UNIVERSE } from '../lib/universe.js';
 import { upstoxQuotes } from '../lib/upstox.js';
 import { kiteQuotes } from '../lib/kite.js';
+import { yQuotes } from '../lib/yahoo.js';
 
 const clean = (s) => String(s || '').toUpperCase().replace(/[^A-Z0-9&\-]/g, '');
 
@@ -16,11 +17,12 @@ export default async function handler(req, res) {
   const warnings = [];
   const tries = [];
   if (t.upstox) tries.push(['Upstox', () => upstoxQuotes(t.upstox.t, symbols)]);
+  if (process.env.DISABLE_YAHOO !== '1') tries.push(['Yahoo', () => yQuotes(symbols)]);
   if (t.kite) tries.push(['Zerodha', () => kiteQuotes(t.kite.t, symbols)]);
   for (const [name, fn] of tries) {
     try {
       const q = await fn();
-      return send(res, 200, { source: name, at: Date.now(), stocks: q.stocks, index: q.index, warnings });
+      return send(res, 200, { source: name, delayed: name === 'Yahoo', at: Date.now(), stocks: q.stocks, index: q.index, warnings });
     } catch (e) {
       warnings.push(`${name}: ${e.message}`);
     }

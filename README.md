@@ -11,7 +11,12 @@ A private, installable web app for tracking and analysing an Indian equity portf
 - **Alpha lab**: a signal scanner (RSI, z-score, momentum, MACD, SMA trend), pair-trading z-score and Kelly sizing.
 - **Positions**: per-stock flags (Safe / Watch / Risky) with the reasons.
 - **Tools**: position sizing and SIP calculators.
-- **Connect**: Upstox and Zerodha (official logins, read-only), CSV import for any broker, and manual entry.
+- **Connect**: Upstox, Zerodha and Angel One (official logins, read-only), CSV import for any broker, and manual entry.
+- **News & brief**: BSE/NSE corporate filings, Moneycontrol and ET Markets feeds, Google News for each holding, plus a morning brief.
+- **Charts**: candlesticks with SMA 20/50/200, Bollinger Bands, volume and RSI for any NSE symbol.
+- **Screener**: the Nifty 50 plus holdings plus a personal watchlist, with momentum, 52-week-high, pullback, oversold, volume-spike and breakdown screens.
+
+Prices, charts, history and news work **without any broker**, using free Yahoo Finance data and exchange/RSS feeds. Brokers are only needed to import holdings.
 
 The app **only reads data. It cannot place orders**, and it never sees broker passwords: users log in on the broker's own page.
 Until a broker is connected it shows a clearly labelled demo portfolio and a simulated market.
@@ -78,6 +83,29 @@ The file needs columns like *Symbol* (or *ISIN*), *Quantity* and *Average price*
 Live prices for these holdings come from whichever of Upstox or Zerodha (Connect plan) is linked.
 Imported holdings are stored in that browser only.
 
+## Step 5b: Connect Angel One
+
+1. Sign in at smartapi.angelone.in with Talha's Angel One account and choose **Create an App → Trading APIs**.
+2. Set the **Redirect URL** to `https://YOUR-APP.vercel.app/api/angel-callback`. You can leave the Postback URL empty.
+3. Copy the **API Key** into Vercel as `ANGEL_API_KEY`, then redeploy. Click **Connect Angel One** in the app.
+
+## Security settings (recommended)
+
+| Variable | What it does |
+|---|---|
+| `APP_PASSWORD` | Required, at least 10 characters. |
+| `TOTP_SECRET` | Turns on authenticator-app codes (Google or Microsoft Authenticator). In the app, choose **Add account → Enter a setup key**, paste this key, and select type **Time-based**. |
+| `SESSION_DAYS` | How long a login lasts (default 7, maximum 30). |
+| `SESSION_VERSION` | Change it (e.g. `1` → `2`) and redeploy to log out **every** device immediately. |
+
+Built in, with no settings needed:
+- 5 wrong attempts lock that address for 15 minutes.
+- Auto-logout after 30 minutes idle.
+- Strict browser security headers (CSP, HSTS, no framing).
+- Blocking of cross-site requests.
+- A one-time check on every broker login.
+- Broker tokens are encrypted (AES-256-GCM) in HTTP-only cookies.
+
 ## Step 6: Ask Claude (optional)
 
 Create an API key at console.anthropic.com and add it as `ANTHROPIC_API_KEY`.
@@ -135,6 +163,8 @@ The 50-stock breadth list is in `lib/universe.js`.
 - Risk numbers use about one year of daily closes. Expected returns are pulled halfway toward a market-risk assumption (risk-free rate 6.5%, equity premium 6%), so past winners don't look unrealistically good.
 - Stress scenarios use approximate sector moves, with beta × index move for other stocks. They are teaching tools, not forecasts.
 - Option prices are Black-Scholes model values from the sliders, not live option-chain quotes.
+- Yahoo Finance is an unofficial free source. Prices may be delayed, and Yahoo can rate-limit or change it. When Upstox is connected, its official real-time quotes are used first.
+- Exchange-filing feeds (NSE in particular) sometimes block cloud servers. The News tab shows which sources loaded and keeps working with the rest.
 - Index membership changes over time. Update `lib/universe.js` occasionally.
 - For learning only. This is not investment advice.
 

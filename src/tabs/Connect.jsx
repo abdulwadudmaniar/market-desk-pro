@@ -6,6 +6,7 @@ import { inr } from '../lib/format.js';
 const BROKERS = [
   { id: 'upstox', name: 'Upstox', method: 'Official Upstox API · read-only', desc: 'Holdings, live quotes and price history. Upstox lists its data APIs as free. Login resets every morning (~3:30 AM).' },
   { id: 'kite', name: 'Zerodha', method: 'Kite Connect API · read-only', desc: 'Holdings work on the free Personal plan. Live quotes and price history need the paid Connect plan. Login resets every morning (~6 AM).' },
+  { id: 'angel', name: 'Angel One', method: 'SmartAPI · read-only', desc: 'Holdings through Angel One’s official SmartAPI login. Free. Login resets every day.' },
 ];
 
 export default function Connect({ status, manual, addManual, removeManual, clearManual, loadStatus, loadPortfolio, setFlash, broker }) {
@@ -45,7 +46,12 @@ export default function Connect({ status, manual, addManual, removeManual, clear
 
   return (
     <div className="col" style={{ gap: 14 }}>
-      <p className="para">Connect a broker with its official login, or import a holdings file. Market Desk Pro only reads data — it can't place orders and never sees your broker password.</p>
+      <p className="para">Connect a broker with its official login, or import a holdings file. Market Desk Pro only reads data — it can't place orders and never sees your broker password. Prices, charts and news work without any broker (free Yahoo Finance + exchange feeds).</p>
+      {status && status.security && (
+        <div className="banner" style={{ background: status.security.totp ? 'rgba(61,190,139,.10)' : 'rgba(242,169,59,.10)', color: status.security.totp ? '#5FD3A3' : '#F5BD62' }}>
+          <span>Security: password {status.security.totp ? '+ authenticator code ✓' : 'only — add TOTP_SECRET on the server to require an authenticator code'} · sessions last {status.security.sessionDays} days · auto-logout after 30 min idle · 5 wrong tries = 15-min lock.</span>
+        </div>
+      )}
       <div className="auto" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))' }}>
         {BROKERS.map((b) => {
           const st = status ? status[b.id] : null;
@@ -71,9 +77,9 @@ export default function Connect({ status, manual, addManual, removeManual, clear
         <div className="pn"><div className="pb">
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span style={{ width: 40, height: 40, borderRadius: 6, background: '#151D26', border: '1px solid #2E3A48', color: '#F2A93B', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>↥</span>
-            <div className="col" style={{ gap: 0 }}><strong>Groww, Angel One &amp; others</strong><span className="mut tiny">Holdings file (CSV)</span></div>
+            <div className="col" style={{ gap: 0 }}><strong>Groww, Dhan &amp; others</strong><span className="mut tiny">Holdings file (CSV)</span></div>
           </div>
-          <p className="para">Export holdings from your broker as CSV (or save the Excel export as CSV) with columns like Symbol, Quantity and Average price. Prices update live once Upstox or Zerodha-Connect is linked.</p>
+          <p className="para">Export holdings from your broker as CSV (or save the Excel export as CSV) with columns like Symbol, Quantity and Average price. Live prices come from the free price feed automatically.</p>
           <label className="btn primary" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
             Choose CSV file<input type="file" accept=".csv,text/csv" onChange={onFile} className="sr" />
           </label>

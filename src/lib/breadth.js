@@ -20,8 +20,9 @@ export function pushEvent(E, msg, kind = 'info') {
 export function stepEngine(E, stocks) {
   const N = stocks.length || 1;
   let adv = 0, dec = 0, upV = 0, dnV = 0, sum = 0;
+  const hasVol = stocks.some((s) => s.volume > 0);
   for (const s of stocks) {
-    const v = s.volume || 1;
+    const v = hasVol ? s.volume || 0 : 1;
     if (s.chg > 0.05) { adv++; upV += v; } else if (s.chg < -0.05) { dec++; dnV += v; }
     sum += s.chg;
     const p = E.prev[s.sym];
@@ -39,7 +40,7 @@ export function stepEngine(E, stocks) {
   E.e19 = E.e19 == null ? net : E.e19 + (net - E.e19) * 0.1;
   E.e39 = E.e39 == null ? net : E.e39 + (net - E.e39) * 0.05;
   const adr = adv / Math.max(dec, 1);
-  const trin = upV && dnV ? adr / (upV / dnV) : null;
+  const trin = hasVol && upV && dnV ? adr / (upV / dnV) : null;
   const mcc = (E.e19 - E.e39) * 4;
   const upVolPct = upV + dnV ? (upV / (upV + dnV)) * 100 : 50;
   const score = (adr > 1.3 ? 1 : adr < 0.77 ? -1 : 0) + (trin == null ? 0 : trin < 0.85 ? 1 : trin > 1.15 ? -1 : 0) + (mcc > 5 ? 1 : mcc < -5 ? -1 : 0) + (upVolPct > 60 ? 1 : upVolPct < 40 ? -1 : 0);

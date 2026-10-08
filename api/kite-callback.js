@@ -2,10 +2,12 @@
 import { query, redirect, cookie, addCookies } from '../lib/http.js';
 import { isLoggedIn, seal, nextIstTime, BROKER_COOKIES } from '../lib/auth.js';
 import { kiteCreateSession } from '../lib/kite.js';
+import { checkState } from '../lib/oauthState.js';
 
 export default async function handler(req, res) {
   if (!isLoggedIn(req)) return redirect(res, '/');
   const { request_token: rt, status } = query(req);
+  if (!checkState(req, res, 'kite', null)) return redirect(res, '/#connect?err=' + encodeURIComponent('Zerodha login did not start here. Try Connect again.'));
   if (status !== 'success' || !rt) return redirect(res, '/#connect?err=' + encodeURIComponent('Zerodha login was cancelled.'));
   try {
     const accessToken = await kiteCreateSession(rt);

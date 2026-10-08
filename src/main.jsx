@@ -17,21 +17,26 @@ import Alpha from './tabs/Alpha.jsx';
 import Positions from './tabs/Positions.jsx';
 import Tools from './tabs/Tools.jsx';
 import Connect from './tabs/Connect.jsx';
+import Charts from './tabs/Charts.jsx';
+import Screener from './tabs/Screener.jsx';
+import News from './tabs/News.jsx';
 
 const TABS = [
-  ['core', 'Market core'], ['command', 'Command'], ['risk', 'Risk'], ['stress', 'Stress'], ['opt', 'Optimizer'],
-  ['deriv', 'Derivatives & hedge'], ['alpha', 'Alpha lab'], ['positions', 'Positions'], ['tools', 'Tools'], ['connect', 'Connect'],
+  ['core', 'Market core'], ['command', 'Command'], ['news', 'News & brief'], ['charts', 'Charts'], ['screener', 'Screener'],
+  ['risk', 'Risk'], ['stress', 'Stress'], ['opt', 'Optimizer'], ['deriv', 'Derivatives & hedge'], ['alpha', 'Alpha lab'],
+  ['positions', 'Positions'], ['tools', 'Tools'], ['connect', 'Connect'],
 ];
 
-function Login({ onDone, configError }) {
+function Login({ onDone, configError, totp }) {
   const [pw, setPw] = useState('');
+  const [code, setCode] = useState('');
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
   const submit = async (e) => {
     e.preventDefault();
     setBusy(true); setErr('');
-    try { await api('/api/auth?action=login', { method: 'POST', body: JSON.stringify({ password: pw }) }); onDone(); }
-    catch (x) { setErr(x.message); }
+    try { await api('/api/auth?action=login', { method: 'POST', body: JSON.stringify({ password: pw, code }) }); onDone(); }
+    catch (x) { setErr(x.message); setCode(''); }
     setBusy(false);
   };
   return (
@@ -45,9 +50,15 @@ function Login({ onDone, configError }) {
             <>
               <label htmlFor="pw" className="lbl">Password</label>
               <input id="pw" className="field" type="password" autoComplete="current-password" value={pw} onChange={(e) => setPw(e.target.value)} autoFocus />
+              {totp && (
+                <>
+                  <label htmlFor="code" className="lbl">6-digit code from your authenticator app</label>
+                  <input id="code" className="field num" inputMode="numeric" autoComplete="one-time-code" maxLength={6} pattern="[0-9]{6}" value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))} style={{ letterSpacing: '.4em', fontSize: 20, textAlign: 'center' }} />
+                </>
+              )}
               {err && <p className="para" style={{ color: RED }} role="alert">{err}</p>}
-              <button className="btn primary" type="submit" disabled={busy || !pw}>{busy ? 'Checking…' : 'Open terminal'}</button>
-              <p className="note">Private dashboard. Broker accounts are connected read-only after you log in.</p>
+              <button className="btn primary" type="submit" disabled={busy || !pw || (totp && code.length !== 6)}>{busy ? 'Checking…' : 'Open terminal'}</button>
+              <p className="note">Private terminal. Protected by password{totp ? ' + authenticator code' : ''}; broker accounts are read-only.</p>
             </>
           )}
         </div>
@@ -89,6 +100,8 @@ function Dashboard({ onLogout }) {
   const [speed, setSpeed] = useState(1);
   const [tick, setTick] = useState(0);
   const simRef = useRef(null);
+  const srcRef = useRef(null);
+  const [uhist, setUhist] = useState(null);
   const engRef = useRef(createEngine());
   const [breadth, setBreadth] = useState(null);
 
@@ -97,7 +110,7 @@ function Dashboard({ onLogout }) {
     const onHash = () => {
       const { tab: t, params } = readHash();
       if (t) setTab(t);
-      if (params.get('ok')) setFlash({ kind: 'ok', text: `${params.get('ok') === 'kite' ? 'Zerodha' : 'Upstox'} connected. Holdings are loading.` });
+      if (params.get('ok')) setFlash({ kind: 'ok', text: `${{ kite: 'Zerodha', upstox: 'Upstox', angel: 'Angel One' }[params.get('ok')] || 'Broker'} connected. Holdings are loading.` });
       if (params.get('err')) setFlash({ kind: 'err', text: params.get('err') });
       if (params.get('ok') || params.get('err')) history.replaceState(null, '', '#' + (t || 'connect'));
     };
@@ -113,27 +126,30 @@ function Dashboard({ onLogout }) {
   const loadPortfolio = useCallback(() => api('/api/portfolio').then((j) => setBroker({ ...j, loaded: true })).catch((e) => { authFail(e); setBroker((b) => ({ ...b, loaded: true })); }), [authFail]);
   useEffect(() => { loadStatus(); loadPortfolio(); const id = setInterval(loadPortfolio, 120000); return () => clearInterval(id); }, [loadStatus, loadPortfolio]);
 
-  const connected = !!(status && (status.kite.connected || status.upstox.connected));
   const realList = broker.holdings.length || manual.length;
   const demo = broker.loaded && !realList;
 
   // live quotes
   const extra = useMemo(() => manual.map((m) => m.symbol).concat(broker.holdings.map((h) => h.symbol)).join(','), [manual, broker.holdings]);
   useEffect(() => {
-    if (!connected) { setMarket({ source: null, stocks: {}, index: null, warnings: [] }); return; }
     let stop = false;
+    let timer = null;
     const pull = () => {
-      if (document.hidden) return;
       api('/api/market?extra=' + encodeURIComponent(extra)).then((j) => {
         if (stop) return;
         setMarket(j);
+        srcRef.current = j.source;
         if (j.source && !engRef.current.sourced) { engRef.current.sourced = true; pushEvent(engRef.current, `Live feed connected via ${j.source}`, 'info'); }
-      }).catch(authFail);
+      }).catch(authFail).finally(() => {
+        if (stop) return;
+        const fast = marketOpen() ? (srcRef.current === 'Yahoo' ? 20000 : 5000) : 60000;
+        timer = setTimeout(pull, fast);
+      });
     };
-    pull();
-    const id = setInterval(pull, marketOpen() ? 5000 : 60000);
-    return () => { stop = true; clearInterval(id); };
-  }, [connected, extra, authFail]);
+    const pullWrap = () => { if (document.hidden) { timer = setTimeout(pullWrap, 5000); return; } pull(); };
+    pullWrap();
+    return () => { stop = true; clearTimeout(timer); };
+  }, [extra, authFail]);
 
   // holdings (live-priced)
   const holdings = useMemo(() => {
@@ -149,17 +165,28 @@ function Dashboard({ onLogout }) {
   const symKey = holdings.map((h) => h.symbol).sort().join(',');
   useEffect(() => {
     if (demo) { setHist(demoHistory()); return; }
-    if (!connected || !symKey) { setHist(null); return; }
+    if (!symKey) { setHist(null); return; }
     let stop = false;
     api('/api/history?symbols=' + encodeURIComponent(symKey)).then((j) => { if (!stop) setHist(j); }).catch(authFail);
     return () => { stop = true; };
-  }, [demo, connected, symKey, authFail]);
+  }, [demo, symKey, authFail]);
 
-  // daily breadth for the universe (Upstox only — free history)
+  // ~1y history for the 50-stock universe (+ watchlist): feeds daily breadth and the screener. Loaded once, when first needed.
+  const [watch, setWatch] = useState(loadWatch);
+  const needUniverse = tab === 'core' || tab === 'screener';
+  const uKey = Array.from(new Set(watch.concat(demo ? [] : holdings.map((h) => h.symbol)))).sort().join(',');
   useEffect(() => {
-    if (!status || !status.upstox.connected) { setDaily(null); return; }
-    api('/api/history?universe=1').then((j) => setDaily(dailyBreadth(j.series || {}, UNIVERSE.map((u) => u.sym)))).catch(() => setDaily(null));
-  }, [status]);
+    if (!needUniverse) return;
+    if (uhist && uhist.key === uKey) return;
+    let stop = false;
+    api('/api/history?universe=1&symbols=' + encodeURIComponent(uKey)).then((j) => {
+      if (stop) return;
+      setUhist({ ...j, key: uKey });
+      setDaily(dailyBreadth(j.series || {}, UNIVERSE.map((u) => u.sym)));
+    }).catch(authFail);
+    return () => { stop = true; };
+  }, [needUniverse, uKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  const saveWatchList = (list) => { setWatch(list); try { localStorage.setItem('md_watch_v1', JSON.stringify(list)); } catch { /* ignore */ } };
 
   // breadth tick: real quotes when available, otherwise simulation
   const live = !!market.source;
@@ -175,7 +202,7 @@ function Dashboard({ onLogout }) {
     if (live) {
       stocks = UNIVERSE.filter((u) => market.stocks[u.sym]).map((u) => {
         const q = market.stocks[u.sym];
-        return { sym: u.sym, sector: u.sector, chg: q.prevClose ? (q.ltp / q.prevClose - 1) * 100 : 0, volume: q.volume || 1, ltp: q.ltp };
+        return { sym: u.sym, sector: u.sector, chg: q.prevClose ? (q.ltp / q.prevClose - 1) * 100 : 0, volume: q.volume || 0, ltp: q.ltp };
       });
     } else {
       if (!simRef.current) simRef.current = initSim();
@@ -197,9 +224,22 @@ function Dashboard({ onLogout }) {
   const removeManual = (sym) => { const next = manual.filter((m) => m.symbol !== sym); setManual(next); saveManual(next); };
   const clearManual = () => { setManual([]); saveManual([]); };
 
+  const [chartSym, setChartSym] = useState('NIFTY');
+  const openChart = (sym) => { setChartSym(sym); go('charts'); };
   const logout = async () => { await api('/api/auth?action=logout', { method: 'POST' }).catch(() => {}); onLogout(); };
 
-  const ctx = { M, holdings, hist, breadth, daily, market, status, demo, go, live, paused, setPaused, speed, setSpeed, broker, manual, addManual, removeManual, clearManual, loadStatus, loadPortfolio, setFlash };
+  // auto-logout after 30 minutes without activity
+  useEffect(() => {
+    let last = Date.now();
+    const bump = () => { last = Date.now(); };
+    const ev = ['pointerdown', 'keydown', 'scroll', 'touchstart'];
+    ev.forEach((e) => window.addEventListener(e, bump, { passive: true }));
+    const id = setInterval(() => { if (Date.now() - last > 30 * 60000) logout(); }, 30000);
+    return () => { clearInterval(id); ev.forEach((e) => window.removeEventListener(e, bump)); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const names = useMemo(() => Object.fromEntries(Object.entries(market.stocks || {}).filter(([, q]) => q.name).map(([k, q]) => [k, q.name])), [market.stocks]);
+  const ctx = { M, holdings, hist, uhist, breadth, daily, market, status, demo, go, live, paused, setPaused, speed, setSpeed, broker, manual, addManual, removeManual, clearManual, loadStatus, loadPortfolio, setFlash, watch, saveWatchList, names, chartSym, setChartSym, openChart };
 
   const pnlT = M.empty ? 0 : M.total - M.invested;
   const kpis = M.empty ? [] : [
@@ -232,7 +272,7 @@ function Dashboard({ onLogout }) {
         <header style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 14 }}>
           <Brand />
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
-            {live ? <Pill kind="Safe"><span className="ldot" />LIVE · {market.source} · {istClock()}</Pill>
+            {live ? <Pill kind="Safe"><span className="ldot" />LIVE · {market.source}{market.delayed ? ' (may be delayed)' : ''} · {istClock()}</Pill>
               : <Pill kind="Watch"><span className="ldot off" />SIMULATED MARKET</Pill>}
             {demo ? <Pill kind="Watch">DEMO PORTFOLIO</Pill> : <Pill kind="Info">{holdings.length} HOLDINGS</Pill>}
             {!marketOpen() && <Pill kind="Off">MARKET CLOSED</Pill>}
@@ -284,14 +324,21 @@ function Dashboard({ onLogout }) {
         {tab === 'positions' && <Positions {...ctx} />}
         {tab === 'tools' && <Tools {...ctx} />}
         {tab === 'connect' && <Connect {...ctx} />}
+        {tab === 'charts' && <Charts {...ctx} />}
+        {tab === 'screener' && <Screener {...ctx} />}
+        {tab === 'news' && <News {...ctx} />}
 
         <footer className="note" style={{ borderTop: '1px solid #222C38', paddingTop: 12 }}>
           For learning only — not investment advice. Market Desk Pro reads data and never places orders.
-          {hist && hist.source && <> Price history: {hist.source}.</>} {live ? `Quotes: ${market.source}.` : 'Market core is simulated until a broker with market data is connected.'}
+          {hist && hist.source && <> Price history: {hist.source}.</>} {live ? `Quotes: ${market.source}${market.delayed ? ' (free feed, may be delayed)' : ''}.` : 'Market core is simulated until a price feed is reachable.'}
         </footer>
       </div>
     </>
   );
+}
+
+function loadWatch() {
+  try { return JSON.parse(localStorage.getItem('md_watch_v1') || '[]'); } catch { return []; }
 }
 
 function mergeManual(cur, add) {
@@ -304,12 +351,12 @@ function App() {
   const [state, setState] = useState({ checking: true, loggedIn: false, configError: null });
   const check = useCallback(() => {
     fetch('/api/auth?action=me', { credentials: 'same-origin' })
-      .then((r) => r.json().then((j) => setState({ checking: false, loggedIn: !!j.loggedIn, configError: j.configError || null })))
+      .then((r) => r.json().then((j) => setState({ checking: false, loggedIn: !!j.loggedIn, configError: j.configError || null, totp: !!j.totp })))
       .catch(() => setState({ checking: false, loggedIn: false, configError: 'Server not reachable.' }));
   }, []);
   useEffect(check, [check]);
   if (state.checking) return <div className="login"><span className="mut">Loading…</span></div>;
-  if (!state.loggedIn) return <Login onDone={check} configError={state.configError} />;
+  if (!state.loggedIn) return <Login onDone={check} configError={state.configError} totp={state.totp} />;
   return <Dashboard onLogout={() => setState({ checking: false, loggedIn: false, configError: null })} />;
 }
 

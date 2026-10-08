@@ -1,54 +1,45 @@
-// /api/history?symbols=A,B,C&universe=1 — ~1 year of daily closes for each symbol plus the Nifty 50.
-// universe=1 also returns the 50 breadth stocks (used for % above 50/200-DMA and 52-week highs/lows).
+// /api/history?symbols=A,B,C&universe=1 — ~1 year of daily [date, close, volume] for each symbol plus the Nifty 50.
+// universe=1 adds the 50 breadth stocks. Source: Upstox if connected, otherwise Yahoo Finance (free).
 import { send, query } from '../lib/http.js';
 import { requireSession, brokerTokens } from '../lib/auth.js';
 import { UNIVERSE } from '../lib/universe.js';
 import { upstoxDaily } from '../lib/upstox.js';
-import { kiteDaily } from '../lib/kite.js';
+import { yDaily, pool } from '../lib/yahoo.js';
 
-const CACHE = new Map(); // `${source}:${symbol}:${day}` -> series
+const CACHE = new Map();
 const clean = (s) => String(s || '').toUpperCase().replace(/[^A-Z0-9&\-]/g, '');
-
-async function pool(items, limit, gapMs, fn) {
-  const out = [];
-  let i = 0;
-  async function worker() {
-    while (i < items.length) {
-      const k = i++;
-      out[k] = await fn(items[k]).catch((e) => ({ error: e.message }));
-      if (gapMs) await new Promise((r) => setTimeout(r, gapMs));
-    }
-  }
-  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
-  return out;
-}
 
 export default async function handler(req, res) {
   if (!requireSession(req, res)) return;
   const q = query(req);
   const t = brokerTokens(req);
-  let symbols = String(q.symbols || '').split(',').map(clean).filter(Boolean).slice(0, 60);
+  let symbols = String(q.symbols || '').split(',').map(clean).filter(Boolean).slice(0, 120);
   if (q.universe === '1') symbols = Array.from(new Set(symbols.concat(UNIVERSE.map((u) => u.sym))));
 
-  let source = null;
-  let fetcher = null;
-  let limit = 5;
-  let gap = 0;
-  if (t.upstox) { source = 'Upstox'; fetcher = (s) => upstoxDaily(t.upstox.t, s); }
-  else if (t.kite) { source = 'Zerodha'; fetcher = (s) => kiteDaily(t.kite.t, s); limit = 2; gap = 350; }
-  if (!fetcher) return send(res, 200, { source: null, series: {}, index: null, errors: ['Connect a broker to load price history.'] });
+  const sources = [];
+  if (t.upstox) sources.push(['Upstox', (s) => upstoxDaily(t.upstox.t, s)]);
+  if (process.env.DISABLE_YAHOO !== '1') sources.push(['Yahoo', (s) => yDaily(s)]);
+  if (!sources.length) return send(res, 200, { source: null, series: {}, index: null, errors: ['No price-history source available.'] });
 
   const day = new Date().toISOString().slice(0, 10);
-  const get = async (sym) => {
-    const key = `${source}:${sym}:${day}`;
-    if (CACHE.has(key)) return CACHE.get(key);
-    const s = (await fetcher(sym)).sort((a, b) => (a[0] < b[0] ? -1 : 1));
-    CACHE.set(key, s);
-    return s;
-  };
-
   const all = ['__NIFTY__'].concat(symbols);
-  const results = await pool(all, limit, gap, get);
+  const used = new Set();
+  const results = await pool(all, 6, async (sym) => {
+    let lastErr;
+    for (const [name, fn] of sources) {
+      const key = `${name}:${sym}:${day}`;
+      if (CACHE.has(key)) { used.add(name); return CACHE.get(key); }
+      try {
+        const s = (await fn(sym)).sort((a, b) => (a[0] < b[0] ? -1 : 1));
+        if (s.length < 5) throw new Error('too little data');
+        CACHE.set(key, s);
+        if (CACHE.size > 600) CACHE.delete(CACHE.keys().next().value);
+        used.add(name);
+        return s;
+      } catch (e) { lastErr = e; }
+    }
+    throw lastErr;
+  });
   const series = {};
   const errors = [];
   all.forEach((s, i) => {
@@ -58,5 +49,5 @@ export default async function handler(req, res) {
   });
   const index = series.__NIFTY__ || null;
   delete series.__NIFTY__;
-  send(res, 200, { source, series, index, errors });
+  send(res, 200, { source: Array.from(used).join(' + ') || null, series, index, errors });
 }
