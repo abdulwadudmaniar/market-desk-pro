@@ -1,0 +1,17 @@
+{
+  "name": "market-desk-pro",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Personal Indian-equities dashboard: live market-breadth core, risk analytics, broker connections (Zerodha, Upstox) and Ask Claude.",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "start": "node server.js",
+    "build:ui": "node build.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  }
+}
