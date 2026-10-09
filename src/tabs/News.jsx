@@ -75,11 +75,11 @@ export default function News({ M, holdings, demo, breadth, status, names, openCh
         </div>
         {status && status.claude ? (
           <div className="col" style={{ gap: 8 }}>
-            <button type="button" className="btn primary" style={{ alignSelf: 'flex-start' }} onClick={writeBrief} disabled={ai.busy || !data}>{ai.busy ? 'Claude is writing…' : 'Write my brief with Claude'}</button>
+            <button type="button" className="btn primary" style={{ alignSelf: 'flex-start' }} onClick={writeBrief} disabled={ai.busy || !data}>{ai.busy ? 'AI is writing…' : 'Write my brief with AI'}</button>
             {ai.error && <p className="para" style={{ color: '#FF8A8A' }}>{ai.error}</p>}
-            {ai.text && <div className="box"><p className="lbl" style={{ color: '#F2A93B' }}>Claude ›</p><p className="para" style={{ color: '#E6EDF3', whiteSpace: 'pre-line', fontSize: 14 }}>{ai.text}</p></div>}
+            {ai.text && <div className="box"><p className="lbl" style={{ color: '#F2A93B' }}>AI ›</p><p className="para" style={{ color: '#E6EDF3', whiteSpace: 'pre-line', fontSize: 14 }}>{ai.text}</p></div>}
           </div>
-        ) : <p className="note">Add an Anthropic API key on the server to get a written brief from Claude.</p>}
+        ) : <p className="note">Add a free GEMINI_API_KEY in Vercel to get a written brief from AI.</p>}
       </Panel>
 
       <Panel title="News & exchange filings" right={<button type="button" className="btn small" onClick={load}>Refresh</button>}>

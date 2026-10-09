@@ -122,7 +122,7 @@ export default function Command({ M, status, breadth, go, demo }) {
           {M.counts.Watch + M.counts.Risky === 0 && <p className="para">No holdings flagged right now.</p>}
         </Panel>
 
-        <Panel title="Ask Claude" style={{ flex: '999 1 560px' }} right={<span className="mut small">{status && status.claude ? 'Uses your holdings and risk numbers' : 'Quick answers (add an Anthropic key for free-form questions)'}</span>}>
+        <Panel title="Ask AI" style={{ flex: '999 1 560px' }} right={<span className="mut small">{status && status.claude ? 'Uses your holdings and risk numbers' : 'Quick answers (add a free Gemini key for free-form questions)'}</span>}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {QA.map((x, i) => <button key={x.q} type="button" className={'chip' + (q === i && !ai.answer ? ' on' : '')} onClick={() => { setQ(i); setAi({ busy: false, answer: '', error: '' }); }}>{x.q}</button>)}
           </div>
@@ -134,7 +134,7 @@ export default function Command({ M, status, breadth, go, demo }) {
             </form>
           )}
           <div className="box col" style={{ gap: 6 }}>
-            <p className="lbl" style={{ color: '#F2A93B' }}>Claude ›</p>
+            <p className="lbl" style={{ color: '#F2A93B' }}>AI ›</p>
             {ai.error ? <p className="para" style={{ color: '#FF8A8A' }}>{ai.error}</p>
               : <p className="para" style={{ fontSize: 14, color: '#E6EDF3', whiteSpace: 'pre-line' }}>{ai.busy ? 'Thinking…' : ai.answer || QA[q].a}</p>}
           </div>
