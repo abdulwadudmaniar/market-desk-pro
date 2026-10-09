@@ -1,3 +1,4 @@
+import { aiProvider, AI_LABEL } from '../lib/llm.js';
 // /api/status — which brokers are set up on the server and connected in this browser.
 import { send } from '../lib/http.js';
 import { requireSession, brokerTokens, totpEnabled } from '../lib/auth.js';
@@ -13,7 +14,8 @@ export default async function handler(req, res) {
     kite: b(kiteConfigured(), t.kite),
     upstox: b(upstoxConfigured(), t.upstox),
     angel: b(angelConfigured(), t.angel),
-    claude: !!process.env.ANTHROPIC_API_KEY,
+    claude: aiProvider() !== 'builtin',
+    ai: { provider: aiProvider(), label: AI_LABEL[aiProvider()] },
     security: { totp: totpEnabled(), sessionDays: Number(process.env.SESSION_DAYS || 7) },
   });
 }
