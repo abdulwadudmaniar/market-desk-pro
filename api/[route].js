@@ -13,9 +13,10 @@ import portfolio from '../handlers/portfolio.js';
 import resolve from '../handlers/resolve.js';
 import status from '../handlers/status.js';
 import upstoxCallback from '../handlers/upstox-callback.js';
+import agent from '../handlers/agent.js';
 
 export const ROUTES = {
-  'angel-callback': angelCallback, ask, auth, chart, connect, history, 'kite-callback': kiteCallback,
+  'angel-callback': angelCallback, agent, ask, auth, chart, connect, history, 'kite-callback': kiteCallback,
   market, news, portfolio, resolve, status, 'upstox-callback': upstoxCallback,
 };
 
