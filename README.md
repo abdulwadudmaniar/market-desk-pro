@@ -4,6 +4,8 @@ A private, installable web app for tracking and analysing an Indian equity portf
 
 - **Market core**: a live 3D breadth globe of 50 large-cap NSE stocks, with A/D ratio, TRIN, breadth momentum, % above 50/200-DMA, 52-week highs/lows, sector breadth, movers and an event tape.
 - **Command**: portfolio vs Nifty 50, drawdown, allocation, risk alerts and **Ask Claude**.
+- **AI Desk**: a team of six AI agents (Research Analyst, Technical Analyst, News Desk, Risk Manager, Market Scout, Trading Coach). Give one a task and it pulls live prices, runs 5-year backtests, reads news and filings and writes a report. Free: built-in analysts with no key, or Google Gemini's free tier.
+- **Voice assistant**: the mic button (bottom right, or press **V**) on every tab. Say "open screener", "chart of Tata Motors", "analyse HDFC Bank" or ask a question out loud.
 - **Risk**: VaR/CVaR, historical VaR, tracking error, risk contribution, correlation matrix and sector exposure, all computed from real daily prices.
 - **Stress**: COVID-2020, 2008, rate-hike, crude, rupee and election scenarios, a custom Nifty shock and a Monte Carlo projection.
 - **Optimizer**: an efficient frontier of the user's own holdings.
@@ -31,7 +33,8 @@ Until a broker is connected it shows a clearly labelled demo portfolio and a sim
 | Vercel | Hosts the app at `https://your-name.vercel.app` | Free Hobby plan (personal use) |
 | Upstox developer app *(recommended)* | Holdings, live quotes and price history | Upstox lists its APIs as free |
 | Zerodha Kite Connect app *(if he uses Zerodha)* | Holdings (free Personal plan); live data and history need the paid Connect plan | ₹0 or ₹500 per month |
-| Anthropic API key *(optional)* | Free-form "Ask Claude" questions | Pay per use (small) |
+| Gemini API key *(optional)* | AI-written agent reports, voice answers, Ask box | Free tier |
+| Anthropic API key *(optional, later)* | Claude instead of Gemini, with web search | Pay per use (small) |
 
 Talha should create the broker developer apps **from his own broker accounts**, because broker API apps are tied to the account that owns them.
 
@@ -106,11 +109,19 @@ Built in, with no settings needed:
 - A one-time check on every broker login.
 - Broker tokens are encrypted (AES-256-GCM) in HTTP-only cookies.
 
-## Step 6: Ask Claude (optional)
+## Step 6: AI Desk, voice and Ask box — free
 
-Create an API key at console.anthropic.com and add it as `ANTHROPIC_API_KEY`.
-If the default model name stops working, set `ANTHROPIC_MODEL` to a current model id from Anthropic's docs.
-Without a key, the Ask Claude box still shows built-in quick answers.
+**Works with no key at all.** The AI Desk agents and voice assistant start on the *built-in analysts*: they pull live prices, run 5-year backtests, probability ranges, screens and news, and write fixed-format reports. Cost: ₹0.
+
+**Free AI upgrade (recommended):** Google Gemini has a free tier with no card.
+1. Go to aistudio.google.com, sign in with a Google account and click **Get API key → Create API key**.
+2. In Vercel → Settings → Environment Variables add `GEMINI_API_KEY` = that key, then Redeploy.
+Now agents write their own reports, answer any question by voice, and the Ask box and "Write my brief" button turn on. If the free daily limit is reached, the built-in analysts take over automatically, so nothing breaks and nothing is charged.
+Note: on Google's free tier, prompts may be used by Google to improve its products. Only stock symbols, quantities and portfolio numbers are sent (no names, passwords or broker tokens). Leave the key out if you prefer.
+
+**Later (paid, optional):** add `ANTHROPIC_API_KEY` and `ANTHROPIC_MODEL=claude-sonnet-5-5` and set `AI_PROVIDER=claude` to use Claude with live web search. A voice question costs about 1 US cent and a full report about 3–10 cents.
+
+Voice input works in Chrome, Edge and Safari; the browser asks for microphone permission the first time. Navigation by voice ("open risk", "chart of Reliance") never uses AI.
 
 ## Step 7: Install it on his phone
 
