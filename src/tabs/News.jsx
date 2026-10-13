@@ -82,7 +82,7 @@ export default function News({ M, holdings, demo, breadth, status, names, openCh
         ) : <p className="note">Add a free GEMINI_API_KEY in Vercel to get a written brief from AI.</p>}
       </Panel>
 
-      <Panel title="News & exchange filings" right={<button type="button" className="btn small" onClick={load}>Refresh</button>}>
+      <Panel title="News & exchange filings" right={<div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}><a className="btn small primary" href="/live.html" style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}>● Live news desk</a><button type="button" className="btn small" onClick={load}>Refresh</button></div>}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
           <Seg label="Filter" value={filter} onChange={setFilter} options={[{ value: 'mine', label: `My stocks ${mine.length}` }, { value: 'filing', label: 'Filings' }, { value: 'market', label: 'Market' }, { value: 'all', label: 'All' }]} />
           <label htmlFor="nq" className="sr">Search news</label>
