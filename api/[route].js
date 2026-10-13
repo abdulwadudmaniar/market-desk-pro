@@ -7,6 +7,7 @@ import chart from '../handlers/chart.js';
 import connect from '../handlers/connect.js';
 import history from '../handlers/history.js';
 import kiteCallback from '../handlers/kite-callback.js';
+import liveNews from '../handlers/live-news.js';
 import market from '../handlers/market.js';
 import news from '../handlers/news.js';
 import portfolio from '../handlers/portfolio.js';
@@ -16,7 +17,7 @@ import upstoxCallback from '../handlers/upstox-callback.js';
 import agent from '../handlers/agent.js';
 
 export const ROUTES = {
-  'angel-callback': angelCallback, agent, ask, auth, chart, connect, history, 'kite-callback': kiteCallback,
+  'angel-callback': angelCallback, agent, ask, auth, chart, connect, history, 'kite-callback': kiteCallback, 'live-news': liveNews,
   market, news, portfolio, resolve, status, 'upstox-callback': upstoxCallback,
 };
 
