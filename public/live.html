@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Live News Desk · Market Desk Pro</title>
+<meta name="theme-color" content="#04070B">
+<meta name="robots" content="noindex, nofollow">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/styles.css">
+<style>
+  [hidden]{display:none!important}
+  .ld{max-width:1180px;margin:0 auto;padding:max(14px,env(safe-area-inset-top)) 16px 48px;display:flex;flex-direction:column;gap:14px}
+  .bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 16px;padding:4px 0}
+  .bar h1{margin:0;font-family:'Chakra Petch',sans-serif;font-size:20px;letter-spacing:.1em;text-transform:uppercase;color:#E6EDF3;display:flex;align-items:center;gap:10px}
+  .back{font-size:13px;text-decoration:none;color:var(--mut);display:inline-flex;align-items:center;min-height:44px}
+  .back:hover{color:var(--amber)}
+  .pulse{width:9px;height:9px;border-radius:50%;background:#3DDC97;box-shadow:0 0 0 0 rgba(61,220,151,.6);animation:pl 1.6s ease-out infinite;flex:none}
+  .pulse.off{background:#8D9AA8;animation:none}
+  .pulse.err{background:#FF6363;animation:none}
+  @keyframes pl{0%{box-shadow:0 0 0 0 rgba(61,220,151,.55)}70%{box-shadow:0 0 0 9px rgba(61,220,151,0)}100%{box-shadow:0 0 0 0 rgba(61,220,151,0)}}
+  .clock{display:flex;align-items:center;gap:12px;font-size:12px;color:var(--soft)}
+  .clock .num{font-size:15px;color:#E6EDF3}
+  .brk{display:flex;flex-direction:column;gap:0;border:1px solid rgba(255,99,99,.45);background:rgba(255,99,99,.08);border-radius:10px;overflow:hidden}
+  .brk a{display:flex;gap:12px;align-items:baseline;padding:10px 14px;text-decoration:none;color:#FFE1E1;font-weight:600;font-size:15px;line-height:1.4}
+  .brk a+a{border-top:1px solid rgba(255,99,99,.2)}
+  .brk a:hover{background:rgba(255,99,99,.1)}
+  .tagb{font-family:'Chakra Petch',sans-serif;font-size:11px;letter-spacing:.12em;color:#fff;background:#E5484D;padding:2px 7px;border-radius:3px;flex:none}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+  .card{background:var(--panel);border:1px solid rgba(79,179,217,.18);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0;position:relative}
+  .card.mine{border-color:rgba(242,169,59,.55)}
+  .card .rank{position:absolute;top:12px;right:14px;font-family:'Chakra Petch',sans-serif;color:#3A4756;font-size:22px;font-weight:700}
+  .card .tags{padding-right:26px}
+  .card h3{margin:0;font-size:16px;line-height:1.4;font-weight:600;padding-right:28px}
+  .card h3 a{color:#E6EDF3;text-decoration:none}
+  .card h3 a:hover{color:var(--amber)}
+  .why{margin:0;font-size:13px;line-height:1.5;color:var(--soft);border-left:2px solid var(--amber);padding-left:10px}
+  .tags{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .t-mine{background:rgba(242,169,59,.18);color:#F5BD62}
+  .t-brk{background:rgba(255,99,99,.18);color:#FF9A9A}
+  .t-trend{background:rgba(79,179,217,.16);color:#8FD3EE}
+  .t-new{background:rgba(61,220,151,.16);color:#6BE6B0}
+  .t-tag{background:#151D26;color:var(--soft);border:1px solid #243140}
+  .foot{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:auto}
+  .src{font-size:11px;font-weight:600;padding:3px 7px;border-radius:4px;text-decoration:none;border:1px solid #2A3644;color:var(--soft);background:#0D1319}
+  .src:hover{border-color:var(--amber);color:#E6EDF3}
+  .s-Moneycontrol{border-left:3px solid #4FB3D9}.s-Economic-Times{border-left:3px solid #F2A93B}.s-Business-Standard{border-left:3px solid #C58BF2}.s-Reuters{border-left:3px solid #FF8A3D}
+  .filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .segs{display:flex;flex-wrap:wrap;gap:6px}
+  .list{display:flex;flex-direction:column}
+  .li{display:grid;grid-template-columns:52px minmax(0,1fr);gap:12px;padding:11px 0;border-bottom:1px solid #18212B}
+  .li .tm{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--mut);padding-top:2px}
+  .li a.tt{color:#E6EDF3;text-decoration:none;font-size:14px;line-height:1.45;font-weight:500}
+  .li a.tt:hover{color:var(--amber)}
+  .li.fresh{background:linear-gradient(90deg,rgba(61,220,151,.07),transparent 60%)}
+  .meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:5px}
+  .status{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--mut)}
+  .status b{font-weight:600;color:var(--soft)}
+  .ok{color:#3DDC97}.bad{color:#FF8A8A}
+  .empty{color:var(--mut);font-size:14px;padding:8px 0}
+  .signin{background:rgba(242,169,59,.1);color:#F5BD62}
+  @media (max-width:560px){.grid{grid-template-columns:1fr}.bar h1{font-size:17px}.li{grid-template-columns:44px minmax(0,1fr);gap:10px}}
+  @media (prefers-reduced-motion:reduce){.pulse{animation:none}}
+</style>
+</head>
+<body>
+<div class="ld">
+  <div class="bar">
+    <a class="back" href="/#news">← Dashboard</a>
+    <h1><span class="pulse off" id="dot"></span>Live News Desk</h1>
+    <div class="clock"><span id="upd">Connecting…</span><span class="num" id="clk">--:--:--</span><span class="tiny">IST</span></div>
+  </div>
+
+  <div id="signin" class="banner signin" hidden><span>You're signed out. Log in on the dashboard, then come back here.</span><a class="btn small primary" href="/" style="display:inline-flex;align-items:center;text-decoration:none">Log in</a></div>
+
+  <div id="brk" class="brk" hidden aria-live="polite"></div>
+
+  <section class="pn">
+    <div class="ph"><h2 class="pt">Must know now</h2><span class="mut small" id="topnote">Handpicked for your portfolio</span></div>
+    <div class="pb"><div class="grid" id="top"><p class="empty">Loading the latest from Moneycontrol, Economic Times, Business Standard and Reuters…</p></div></div>
+  </section>
+
+  <section class="pn">
+    <div class="ph"><h2 class="pt">All headlines</h2><span class="mut small" id="count"></span></div>
+    <div class="pb">
+      <div class="filters">
+        <div class="segs" id="f-src" role="group" aria-label="Outlet"></div>
+      </div>
+      <div class="filters">
+        <div class="segs" id="f-topic" role="group" aria-label="Topic"></div>
+        <label for="q" class="sr">Search headlines</label>
+        <input id="q" class="field" style="flex:1 1 200px" placeholder="Search headlines">
+      </div>
+      <div class="list" id="list"></div>
+    </div>
+  </section>
+
+  <div class="status" id="status"></div>
+  <p class="note">Ranking is automatic: stories about your holdings, RBI/SEBI and policy news, red flags, big index moves, stories carried by several outlets and stories leading India's business news rise to the top. The outlets don't publish read counts, so "most read" is estimated from those signals. News is information, not a trading signal.</p>
+</div>
+<script type="module" src="/live.js"></script>
+</body>
+</html>
