@@ -14,7 +14,8 @@ A private, installable web app for tracking and analysing an Indian equity portf
 - **Positions**: per-stock flags (Safe / Watch / Risky) with the reasons.
 - **Tools**: position sizing and SIP calculators.
 - **Connect**: Upstox, Zerodha and Angel One (official logins, read-only), CSV import for any broker, and manual entry.
-- **News & brief**: BSE/NSE corporate filings, Moneycontrol and ET Markets feeds, Google News for each holding, plus a morning brief.
+- **News & brief**: BSE/NSE corporate filings, Moneycontrol, Economic Times, Business Standard and Reuters, Google News for each holding, plus a morning brief.
+- **Live News Desk** (`/live.html`, or the *Live news desk* button on the News tab): all four outlets merged into one feed, duplicates combined, and stories ranked for the user: their holdings first, then RBI/SEBI and policy news, red flags, big index moves, stories carried by several outlets and stories leading India's business news. Breaking stories are flagged, the clock ticks every second, and new stories appear on their own (sources are re-checked once a minute).
 - **Charts**: candlesticks with SMA 20/50/200, Bollinger Bands, volume and RSI for any NSE symbol.
 - **Screener**: the Nifty 50 plus holdings plus a personal watchlist, with momentum, 52-week-high, pullback, oversold, volume-spike and breakdown screens.
 
